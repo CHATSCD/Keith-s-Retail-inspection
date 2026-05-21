@@ -40,6 +40,7 @@ export default function App() {
   const [photos, setPhotos] = useState({});
   const [comments, setComments] = useState('');
   const [signature, setSignature] = useState('');
+  const [staffing, setStaffing] = useState({ managerOnDuty: '', employeesOnShift: '' });
   const [activeSection, setActiveSection] = useState(0);
   const [hasSaved, setHasSaved] = useState(false);
 
@@ -64,6 +65,7 @@ export default function App() {
     setPhotos({});
     setComments('');
     setSignature('');
+    setStaffing({ managerOnDuty: '', employeesOnShift: '' });
     setStoreNumber('');
     setDate(new Date().toISOString().split('T')[0]);
     setActiveSection(0);
@@ -81,6 +83,7 @@ export default function App() {
     setPhotos(saved.photos || {});
     setComments(saved.comments || '');
     setSignature(saved.signature || '');
+    setStaffing(saved.staffing || { managerOnDuty: '', employeesOnShift: '' });
     setActiveSection(saved.activeSection || 0);
     setView('form');
   }
@@ -95,6 +98,7 @@ export default function App() {
       photos,
       comments,
       signature,
+      staffing,
       activeSection,
       ...updates,
     };
@@ -142,6 +146,12 @@ export default function App() {
   function handleSignature(val) {
     setSignature(val);
     persist({ signature: val });
+  }
+
+  function handleStaffing(field, val) {
+    const next = { ...staffing, [field]: val };
+    setStaffing(next);
+    persist({ staffing: next });
   }
 
   function handleSectionChange(idx) {
@@ -215,6 +225,7 @@ export default function App() {
         photos={photos}
         comments={comments}
         signature={signature}
+        staffing={staffing}
         score={score}
         onBack={() => setView('form')}
         onReset={handleReset}
@@ -241,6 +252,7 @@ export default function App() {
         photos={photos}
         comments={comments}
         signature={signature}
+        staffing={staffing}
         activeSection={activeSection}
         sessionId={sessionId}
         onAnswer={handleAnswer}
@@ -249,6 +261,7 @@ export default function App() {
         onRemovePhoto={handleRemovePhoto}
         onComments={handleComments}
         onSignature={handleSignature}
+        onStaffing={handleStaffing}
         onSectionChange={handleSectionChange}
         onFinish={() => setView('summary')}
         onHome={goHome}

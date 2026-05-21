@@ -4,7 +4,7 @@ import { saveInspection } from '../supabase';
 
 export default function Summary({
   sessionId, storeNumber, date, answers, textFields, photos,
-  comments, signature, score, onBack, onReset,
+  comments, signature, staffing, score, onBack, onReset,
 }) {
   const { total, correct, pct, grade } = score;
   const [saveStatus, setSaveStatus] = useState('idle'); // idle | saving | saved | error
@@ -82,11 +82,19 @@ export default function Summary({
       `  • [${i.sectionTitle}] ${i.text}${photoUrls[i.id] ? ' 📷' : ''}`
     ).join('\n');
 
+    const staffingLines = [
+      staffing?.managerOnDuty  ? `Manager on Duty: ${staffing.managerOnDuty}` : '',
+      staffing?.employeesOnShift !== '' && staffing?.employeesOnShift != null
+        ? `Employees on Shift: ${staffing.employeesOnShift}` : '',
+    ].filter(Boolean).join('\n');
+
     return [
-      `Keith's Store Inspection Report`,
+      `Keith's Retail — DM Inspection Report`,
       `Store #${storeNumber || '—'}  |  Date: ${date}`,
       `Score: ${grade}%  (${correct}/${total} correct, ${pct.toFixed(1)}%)`,
       '',
+      staffingLines || null,
+      staffingLines ? '' : null,
       failedItems.length > 0
         ? `Failed Items (${failedItems.length}):\n${failedLines}`
         : 'No failed items.',
@@ -95,7 +103,7 @@ export default function Summary({
       signature ? `Inspector: ${signature}` : '',
       '',
       link ? `View full report: ${link}` : '',
-    ].filter(l => l !== undefined).join('\n').trim();
+    ].filter(l => l !== null && l !== undefined).join('\n').trim();
   }
 
   async function handleSendToStore() {
@@ -130,7 +138,8 @@ export default function Summary({
       {/* Header — title only, no buttons */}
       <div className="bg-blue-600 text-white px-4 py-4">
         <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-base font-bold">Inspection Summary</h1>
+          <div className="text-blue-300 text-xs font-semibold uppercase tracking-widest mb-0.5">Keith's Retail</div>
+          <h1 className="text-base font-bold">DM Inspection Report</h1>
           <p className="text-blue-200 text-xs mt-0.5">
             Store #{storeNumber || '—'}&nbsp;&nbsp;|&nbsp;&nbsp;{date}
           </p>
@@ -185,6 +194,27 @@ export default function Summary({
           </div>
           <div className="text-xs text-gray-400 mt-2">
             95–100% = 100%&nbsp;&nbsp;|&nbsp;&nbsp;90–94% = 90%&nbsp;&nbsp;|&nbsp;&nbsp;85–89% = 80%&nbsp;&nbsp;|&nbsp;&nbsp;&lt;85% = 0%
+          </div>
+        </div>
+
+        {/* Staffing Card */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+            <h2 className="font-bold text-gray-900 text-sm">Staffing</h2>
+          </div>
+          <div className="divide-y divide-gray-50">
+            <div className="px-4 py-2.5 flex items-center justify-between">
+              <span className="text-sm text-gray-600">Manager on Duty</span>
+              <span className="text-sm font-medium text-gray-900">{staffing?.managerOnDuty || <span className="text-gray-400 italic">Not recorded</span>}</span>
+            </div>
+            <div className="px-4 py-2.5 flex items-center justify-between">
+              <span className="text-sm text-gray-600">Employees on Shift</span>
+              <span className="text-sm font-medium text-gray-900">{staffing?.employeesOnShift !== '' && staffing?.employeesOnShift != null ? staffing.employeesOnShift : <span className="text-gray-400 italic">Not recorded</span>}</span>
+            </div>
+            <div className="px-4 py-2.5 flex items-center justify-between">
+              <span className="text-sm text-gray-600">Inspector</span>
+              <span className="text-sm font-medium text-gray-900">{signature || <span className="text-gray-400 italic">Not recorded</span>}</span>
+            </div>
           </div>
         </div>
 
