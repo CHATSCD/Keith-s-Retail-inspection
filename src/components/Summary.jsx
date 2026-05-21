@@ -72,8 +72,9 @@ export default function Summary({
   }
 
   function inspectionLink() {
-    const base = window.location.origin + window.location.pathname.replace(/\/$/, '');
-    return `${base}?view=${savedId}`;
+    const url = new URL(window.location.href);
+    url.search = `?view=${savedId}`;
+    return url.toString();
   }
 
   function buildReportText(link) {
