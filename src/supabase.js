@@ -55,3 +55,20 @@ export async function saveInspection({ storeNumber, date, signature, comments, s
 
   return inspection.id;
 }
+
+export async function fetchInspection(id) {
+  const { data: inspection, error } = await supabase
+    .from('retail_inspections')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error) throw error;
+
+  const { data: items, error: itemsErr } = await supabase
+    .from('retail_inspection_items')
+    .select('*')
+    .eq('inspection_id', id);
+  if (itemsErr) throw itemsErr;
+
+  return { inspection, items };
+}

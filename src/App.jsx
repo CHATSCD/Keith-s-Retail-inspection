@@ -3,12 +3,15 @@ import { SECTIONS, calcScore } from './inspectionData';
 import InspectionForm from './components/InspectionForm';
 import Summary from './components/Summary';
 import Header from './components/Header';
+import InspectionViewer from './components/InspectionViewer';
 import './index.css';
 
 const STORAGE_KEY = 'keithsRetailInspection';
 
 function newSessionId() {
-  return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+  return typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random()}`;
 }
 
 function loadSaved() {
@@ -20,14 +23,21 @@ function loadSaved() {
   }
 }
 
+function getViewId() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('view') || null;
+}
+
 export default function App() {
-  const [view, setView] = useState('home');
+  const viewId = getViewId();
+
+  const [view, setView] = useState(viewId ? 'viewer' : 'home');
   const [sessionId, setSessionId] = useState('');
   const [storeNumber, setStoreNumber] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [answers, setAnswers] = useState({});
   const [textFields, setTextFields] = useState({});
-  const [photos, setPhotos] = useState({});  // itemId -> { url, file }
+  const [photos, setPhotos] = useState({});
   const [comments, setComments] = useState('');
   const [signature, setSignature] = useState('');
   const [activeSection, setActiveSection] = useState(0);
@@ -37,6 +47,14 @@ export default function App() {
     const saved = loadSaved();
     if (saved) setHasSaved(true);
   }, []);
+
+  function goHome() {
+    // Clear ?view= param from URL without reload
+    const url = new URL(window.location);
+    url.searchParams.delete('view');
+    window.history.replaceState({}, '', url);
+    setView('home');
+  }
 
   function startNew() {
     const id = newSessionId();
@@ -87,13 +105,13 @@ export default function App() {
   function handleAnswer(itemId, value) {
     const next = { ...answers, [itemId]: value };
     setAnswers(next);
-    persist({ answers: next });
-    // Clear photo if un-answering or switching to yes
     if (value !== 'no' && photos[itemId]) {
       const nextPhotos = { ...photos };
       delete nextPhotos[itemId];
       setPhotos(nextPhotos);
       persist({ answers: next, photos: nextPhotos });
+    } else {
+      persist({ answers: next });
     }
   }
 
@@ -134,11 +152,17 @@ export default function App() {
   function handleReset() {
     localStorage.removeItem(STORAGE_KEY);
     setHasSaved(false);
-    setView('home');
+    goHome();
   }
 
   const score = calcScore(answers);
 
+  // ── Shared-link viewer ──
+  if (view === 'viewer') {
+    return <InspectionViewer inspectionId={viewId} onHome={goHome} />;
+  }
+
+  // ── Home screen ──
   if (view === 'home') {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
@@ -179,6 +203,7 @@ export default function App() {
     );
   }
 
+  // ── Summary ──
   if (view === 'summary') {
     return (
       <Summary
@@ -197,6 +222,7 @@ export default function App() {
     );
   }
 
+  // ── Inspection Form ──
   return (
     <div className="min-h-screen bg-gray-100">
       <Header
@@ -205,7 +231,7 @@ export default function App() {
         date={date}
         setDate={setDate}
         score={score}
-        onHome={() => setView('home')}
+        onHome={goHome}
         onFinish={() => setView('summary')}
       />
       <InspectionForm
@@ -225,7 +251,7 @@ export default function App() {
         onSignature={handleSignature}
         onSectionChange={handleSectionChange}
         onFinish={() => setView('summary')}
-        onHome={() => setView('home')}
+        onHome={goHome}
       />
     </div>
   );

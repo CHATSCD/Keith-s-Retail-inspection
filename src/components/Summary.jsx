@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SECTIONS } from '../inspectionData';
 import { saveInspection } from '../supabase';
 
@@ -9,6 +9,7 @@ export default function Summary({
   const { total, correct, pct, grade } = score;
   const [saveStatus, setSaveStatus] = useState('idle'); // idle | saving | saved | error
   const [savedId, setSavedId] = useState(null);
+  const [shareStatus, setShareStatus] = useState('idle'); // idle | copied | shared
 
   const gradeColor =
     grade === 100 ? 'text-green-600' :
@@ -20,37 +21,47 @@ export default function Summary({
     grade === 90  ? 'bg-blue-50 border-blue-200'   :
     grade === 80  ? 'bg-yellow-50 border-yellow-200': 'bg-red-50 border-red-200';
 
-  const failedItems = SECTIONS.flatMap(sec =>
-    sec.items
-      .filter(item => answers[item.id] === 'no')
-      .map(item => ({ ...item, sectionTitle: sec.title }))
-  );
-
-  const unanswered = SECTIONS.flatMap(sec =>
-    sec.items
-      .filter(item => answers[item.id] === undefined)
-      .map(item => ({ ...item, sectionTitle: sec.title }))
-  );
-
-  // Flatten photos to url-only map for saving
   const photoUrls = Object.fromEntries(
     Object.entries(photos)
       .filter(([, v]) => v && !v.uploading && !v.error)
       .map(([k, v]) => [k, v.url])
   );
 
-  async function handleSave() {
+  const failedItems = SECTIONS.flatMap(sec =>
+    sec.items.filter(item => answers[item.id] === 'no')
+      .map(item => ({ ...item, sectionTitle: sec.title }))
+  );
+
+  const unanswered = SECTIONS.flatMap(sec =>
+    sec.items.filter(item => answers[item.id] === undefined)
+      .map(item => ({ ...item, sectionTitle: sec.title }))
+  );
+
+  // Auto-save when the summary mounts
+  useEffect(() => {
+    (async () => {
+      if (saveStatus !== 'idle') return;
+      setSaveStatus('saving');
+      try {
+        const id = await saveInspection({
+          storeNumber, date, signature, comments, score,
+          answers, textFields, photos: photoUrls,
+        });
+        setSavedId(id);
+        setSaveStatus('saved');
+      } catch (err) {
+        console.error('Auto-save failed:', err);
+        setSaveStatus('error');
+      }
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleRetrySave() {
     setSaveStatus('saving');
     try {
       const id = await saveInspection({
-        storeNumber,
-        date,
-        signature,
-        comments,
-        score,
-        answers,
-        textFields,
-        photos: photoUrls,
+        storeNumber, date, signature, comments, score,
+        answers, textFields, photos: photoUrls,
       });
       setSavedId(id);
       setSaveStatus('saved');
@@ -60,33 +71,112 @@ export default function Summary({
     }
   }
 
+  function inspectionLink() {
+    return `${window.location.origin}${window.location.pathname}?view=${savedId}`;
+  }
+
+  function buildReportText(link) {
+    const failedLines = failedItems.map(i =>
+      `  • [${i.sectionTitle}] ${i.text}${photoUrls[i.id] ? ' 📷' : ''}`
+    ).join('\n');
+
+    return [
+      `Keith's Store Inspection Report`,
+      `Store #${storeNumber || '—'}  |  Date: ${date}`,
+      `Score: ${grade}%  (${correct}/${total} correct, ${pct.toFixed(1)}%)`,
+      '',
+      failedItems.length > 0
+        ? `Failed Items (${failedItems.length}):\n${failedLines}`
+        : 'No failed items.',
+      '',
+      comments ? `Comments: ${comments}` : '',
+      signature ? `Inspector: ${signature}` : '',
+      '',
+      link ? `View full report: ${link}` : '',
+    ].filter(l => l !== undefined).join('\n').trim();
+  }
+
+  async function handleSendToStore() {
+    const link = savedId ? inspectionLink() : null;
+    const text = buildReportText(link);
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Keith's Store #${storeNumber || '?'} Inspection — ${date}`,
+          text,
+          ...(link ? { url: link } : {}),
+        });
+        setShareStatus('shared');
+      } catch {
+        // User cancelled — no-op
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(link ? `${text}` : text);
+        setShareStatus('copied');
+        setTimeout(() => setShareStatus('idle'), 3000);
+      } catch {
+        setShareStatus('idle');
+      }
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gray-100 pb-10">
-      {/* Header */}
-      <div className="bg-blue-600 text-white px-4 py-4 no-print">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <button onClick={onBack} className="text-blue-100 hover:text-white text-sm flex items-center gap-1">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back
-          </button>
+    <div className="min-h-screen bg-gray-100 pb-28">
+      {/* Header — title only, no buttons */}
+      <div className="bg-blue-600 text-white px-4 py-4">
+        <div className="max-w-2xl mx-auto text-center">
           <h1 className="text-base font-bold">Inspection Summary</h1>
-          <button
-            onClick={() => window.print()}
-            className="text-sm bg-white text-blue-600 font-semibold px-3 py-1 rounded-lg hover:bg-blue-50"
-          >
-            Print
-          </button>
+          <p className="text-blue-200 text-xs mt-0.5">
+            Store #{storeNumber || '—'}&nbsp;&nbsp;|&nbsp;&nbsp;{date}
+          </p>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 pt-4 space-y-4">
+        {/* Save status banner */}
+        <div className={`rounded-xl px-4 py-2.5 flex items-center gap-2 text-sm ${
+          saveStatus === 'saved'  ? 'bg-green-50 text-green-700 border border-green-200' :
+          saveStatus === 'saving' ? 'bg-blue-50 text-blue-700 border border-blue-200'   :
+          saveStatus === 'error'  ? 'bg-red-50 text-red-700 border border-red-200'      :
+          'bg-gray-50 text-gray-500 border border-gray-200'
+        }`}>
+          {saveStatus === 'saving' && (
+            <svg className="w-4 h-4 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
+          )}
+          {saveStatus === 'saved' && (
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+            </svg>
+          )}
+          {saveStatus === 'error' && (
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          )}
+          <div className="flex-1 min-w-0">
+            {saveStatus === 'saving' && 'Saving to database…'}
+            {saveStatus === 'saved'  && (
+              <span>Saved — <span className="font-mono text-xs truncate">{savedId}</span></span>
+            )}
+            {saveStatus === 'error'  && 'Auto-save failed'}
+            {saveStatus === 'idle'   && 'Preparing…'}
+          </div>
+          {saveStatus === 'error' && (
+            <button onClick={handleRetrySave}
+              className="text-xs font-semibold underline flex-shrink-0">
+              Retry
+            </button>
+          )}
+        </div>
+
         {/* Score Card */}
         <div className={`rounded-xl border-2 p-5 text-center ${gradeBg}`}>
-          <div className="text-sm text-gray-600 mb-1">
-            Store #{storeNumber || '—'}&nbsp;&nbsp;|&nbsp;&nbsp;{date}
-          </div>
           <div className={`text-6xl font-black ${gradeColor}`}>{grade}%</div>
           <div className="text-gray-500 text-sm mt-1">
             {correct} / {total} correct ({pct.toFixed(1)}%)
@@ -96,54 +186,6 @@ export default function Summary({
           </div>
         </div>
 
-        {/* Save to Supabase */}
-        <div className="bg-white rounded-xl shadow-sm p-4 no-print">
-          {saveStatus === 'saved' ? (
-            <div className="flex items-center gap-2 text-green-700">
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <div>
-                <div className="font-semibold text-sm">Saved to database</div>
-                <div className="text-xs text-green-600 font-mono">{savedId}</div>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={handleSave}
-              disabled={saveStatus === 'saving'}
-              className={`w-full py-3 rounded-xl font-semibold text-white transition-colors flex items-center justify-center gap-2 ${
-                saveStatus === 'error'
-                  ? 'bg-red-500 hover:bg-red-600'
-                  : 'bg-indigo-600 hover:bg-indigo-700'
-              } disabled:opacity-60`}
-            >
-              {saveStatus === 'saving' ? (
-                <>
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-                  </svg>
-                  Saving…
-                </>
-              ) : saveStatus === 'error' ? (
-                'Retry Save'
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  Save to Database
-                </>
-              )}
-            </button>
-          )}
-          {saveStatus === 'error' && (
-            <p className="text-xs text-red-500 mt-1 text-center">Save failed — check connection and retry</p>
-          )}
-        </div>
-
         {/* Section Breakdown */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
@@ -151,17 +193,15 @@ export default function Summary({
           </div>
           <div className="divide-y divide-gray-50">
             {SECTIONS.map(sec => {
-              const secTotal = sec.items.length;
+              const secTotal   = sec.items.length;
               const secCorrect = sec.items.filter(i => answers[i.id] === 'yes').length;
-              const secNo = sec.items.filter(i => answers[i.id] === 'no').length;
-              const secPct = secTotal > 0 ? Math.round((secCorrect / secTotal) * 100) : 0;
+              const secNo      = sec.items.filter(i => answers[i.id] === 'no').length;
+              const secPct     = secTotal > 0 ? Math.round((secCorrect / secTotal) * 100) : 0;
               return (
                 <div key={sec.id} className="px-4 py-2.5 flex items-center justify-between">
                   <div>
                     <div className="text-sm font-medium text-gray-800">{sec.title}</div>
-                    {secNo > 0 && (
-                      <div className="text-xs text-red-500">{secNo} failed</div>
-                    )}
+                    {secNo > 0 && <div className="text-xs text-red-500">{secNo} failed</div>}
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-gray-400">{secCorrect}/{secTotal}</div>
@@ -197,11 +237,8 @@ export default function Summary({
                       </div>
                     </div>
                     {photo && !photo.uploading && (
-                      <img
-                        src={photo.url}
-                        alt="Issue photo"
-                        className="w-14 h-14 object-cover rounded-lg border border-gray-200 flex-shrink-0"
-                      />
+                      <img src={photo.url} alt="Issue photo"
+                        className="w-16 h-16 object-cover rounded-lg border border-gray-200 flex-shrink-0" />
                     )}
                   </div>
                 );
@@ -245,25 +282,96 @@ export default function Summary({
           </div>
         )}
 
-        {/* Bottom actions */}
-        <div className="flex gap-3 no-print">
+        {/* Shareable link (shown once saved) */}
+        {savedId && (
+          <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Shareable Link</div>
+            <div className="flex items-center gap-2">
+              <input
+                readOnly
+                value={inspectionLink()}
+                className="flex-1 text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-700 font-mono select-all"
+                onFocus={e => e.target.select()}
+              />
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(inspectionLink());
+                  setShareStatus('copied');
+                  setTimeout(() => setShareStatus('idle'), 2500);
+                }}
+                className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
+              >
+                {shareStatus === 'copied' ? '✓ Copied' : 'Copy'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Fixed bottom bar — all action buttons ── */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 no-print">
+        <div className="max-w-2xl mx-auto bg-white border-t border-gray-200 px-4 py-3">
+          {/* Row 1: Home | Back | Print */}
+          <div className="flex items-center gap-2 mb-2">
+            <button
+              onClick={onReset}
+              className="flex flex-col items-center justify-center w-14 py-1.5 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 flex-shrink-0"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              <span className="text-xs mt-0.5">Home</span>
+            </button>
+
+            <button
+              onClick={onBack}
+              className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors text-sm"
+            >
+              ← Back
+            </button>
+
+            <button
+              onClick={() => window.print()}
+              className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors text-sm"
+            >
+              Print / PDF
+            </button>
+          </div>
+
+          {/* Row 2: Send to Store (full width, prominent) */}
           <button
-            onClick={onBack}
-            className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+            onClick={handleSendToStore}
+            disabled={saveStatus === 'saving'}
+            className={`w-full py-3.5 rounded-xl font-bold text-white text-sm transition-colors flex items-center justify-center gap-2 ${
+              shareStatus === 'shared' || shareStatus === 'copied'
+                ? 'bg-green-600 hover:bg-green-700'
+                : 'bg-blue-600 hover:bg-blue-700'
+            } disabled:opacity-60`}
           >
-            ← Back
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="flex-1 py-3 rounded-xl bg-gray-800 text-white font-semibold hover:bg-gray-900 transition-colors"
-          >
-            Print / PDF
-          </button>
-          <button
-            onClick={onReset}
-            className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors"
-          >
-            New
+            {shareStatus === 'shared' ? (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+                </svg>
+                Sent!
+              </>
+            ) : shareStatus === 'copied' ? (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+                </svg>
+                Report Copied to Clipboard
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                Send to Store
+              </>
+            )}
           </button>
         </div>
       </div>
