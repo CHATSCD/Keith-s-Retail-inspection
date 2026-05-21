@@ -8,6 +8,7 @@ export default function InspectionForm({
   photos,
   comments,
   signature,
+  staffing,
   activeSection,
   sessionId,
   onAnswer,
@@ -16,6 +17,7 @@ export default function InspectionForm({
   onRemovePhoto,
   onComments,
   onSignature,
+  onStaffing,
   onSectionChange,
   onFinish,
   onHome,
@@ -65,6 +67,34 @@ export default function InspectionForm({
 
       {isLast && (
         <div className="mt-4 bg-white rounded-xl shadow-sm p-4 space-y-4">
+          {/* Staffing */}
+          <div>
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Staffing</div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Manager on Duty</label>
+                <input
+                  type="text"
+                  value={staffing?.managerOnDuty || ''}
+                  onChange={e => onStaffing('managerOnDuty', e.target.value)}
+                  placeholder="Manager name"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Employees on Shift</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={staffing?.employeesOnShift || ''}
+                  onChange={e => onStaffing('employeesOnShift', e.target.value)}
+                  placeholder="0"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Comments</label>
             <textarea
