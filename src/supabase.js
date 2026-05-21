@@ -1,0 +1,57 @@
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = 'https://zdbaymktrzsmzimwdeua.supabase.co';
+const SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYmF5bWt0cnpzbXppbXdkZXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4NDAxNTQsImV4cCI6MjA5MTQxNjE1NH0.-NONMuk3lkeL0HTiJtPBNEU3F33Y4dOIb1Iv7_K2Ykw';
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+export async function uploadPhoto(file, inspectionId, itemId) {
+  const ext = file.name.split('.').pop() || 'jpg';
+  const path = `${inspectionId}/${itemId}-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage
+    .from('retail-inspection-photos')
+    .upload(path, file, { upsert: true });
+  if (error) throw error;
+  const { data } = supabase.storage
+    .from('retail-inspection-photos')
+    .getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function saveInspection({ storeNumber, date, signature, comments, score, answers, textFields, photos }) {
+  const { data: inspection, error: inspErr } = await supabase
+    .from('retail_inspections')
+    .insert({
+      store_number: storeNumber || null,
+      date: date || null,
+      inspector_signature: signature || null,
+      comments: comments || null,
+      score_pct: score.pct,
+      score_grade: score.grade,
+      correct_count: score.correct,
+      total_count: score.total,
+    })
+    .select('id')
+    .single();
+
+  if (inspErr) throw inspErr;
+
+  const itemRows = Object.entries(answers).map(([itemId, answer]) => ({
+    inspection_id: inspection.id,
+    item_id: itemId,
+    section_id: itemId.split('_').slice(0, -1).join('_'),
+    answer,
+    text_value: textFields[itemId] || null,
+    photo_url: photos[itemId] || null,
+  }));
+
+  if (itemRows.length > 0) {
+    const { error: itemsErr } = await supabase
+      .from('retail_inspection_items')
+      .insert(itemRows);
+    if (itemsErr) throw itemsErr;
+  }
+
+  return inspection.id;
+}

@@ -4,10 +4,12 @@ export default function ChecklistSection({
   section,
   answers,
   textFields,
+  photos,
   onAnswer,
   onTextField,
-  sectionIndex,
-  totalSections,
+  onPhoto,
+  onRemovePhoto,
+  sessionId,
 }) {
   const done = section.items.filter(i => answers[i.id] !== undefined).length;
   const total = section.items.length;
@@ -38,8 +40,12 @@ export default function ChecklistSection({
             index={idx + 1}
             answer={answers[item.id]}
             textValue={textFields[item.id] || ''}
+            photoData={photos[item.id] || null}
             onAnswer={val => onAnswer(item.id, val)}
             onTextField={val => onTextField(item.id, val)}
+            onPhoto={onPhoto}
+            onRemovePhoto={onRemovePhoto}
+            sessionId={sessionId}
           />
         ))}
       </div>

@@ -7,6 +7,10 @@ import './index.css';
 
 const STORAGE_KEY = 'keithsRetailInspection';
 
+function newSessionId() {
+  return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+}
+
 function loadSaved() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -18,10 +22,12 @@ function loadSaved() {
 
 export default function App() {
   const [view, setView] = useState('home');
+  const [sessionId, setSessionId] = useState('');
   const [storeNumber, setStoreNumber] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [answers, setAnswers] = useState({});
   const [textFields, setTextFields] = useState({});
+  const [photos, setPhotos] = useState({});  // itemId -> { url, file }
   const [comments, setComments] = useState('');
   const [signature, setSignature] = useState('');
   const [activeSection, setActiveSection] = useState(0);
@@ -33,8 +39,11 @@ export default function App() {
   }, []);
 
   function startNew() {
+    const id = newSessionId();
+    setSessionId(id);
     setAnswers({});
     setTextFields({});
+    setPhotos({});
     setComments('');
     setSignature('');
     setStoreNumber('');
@@ -46,25 +55,30 @@ export default function App() {
   function resumeSaved() {
     const saved = loadSaved();
     if (!saved) return;
+    setSessionId(saved.sessionId || newSessionId());
     setStoreNumber(saved.storeNumber || '');
     setDate(saved.date || new Date().toISOString().split('T')[0]);
     setAnswers(saved.answers || {});
     setTextFields(saved.textFields || {});
+    setPhotos(saved.photos || {});
     setComments(saved.comments || '');
     setSignature(saved.signature || '');
     setActiveSection(saved.activeSection || 0);
     setView('form');
   }
 
-  function persist(newAnswers, newTextFields, newComments, newSignature, section) {
+  function persist(updates = {}) {
     const data = {
+      sessionId,
       storeNumber,
       date,
-      answers: newAnswers,
-      textFields: newTextFields,
-      comments: newComments,
-      signature: newSignature,
-      activeSection: section,
+      answers,
+      textFields,
+      photos,
+      comments,
+      signature,
+      activeSection,
+      ...updates,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setHasSaved(true);
@@ -73,28 +87,48 @@ export default function App() {
   function handleAnswer(itemId, value) {
     const next = { ...answers, [itemId]: value };
     setAnswers(next);
-    persist(next, textFields, comments, signature, activeSection);
+    persist({ answers: next });
+    // Clear photo if un-answering or switching to yes
+    if (value !== 'no' && photos[itemId]) {
+      const nextPhotos = { ...photos };
+      delete nextPhotos[itemId];
+      setPhotos(nextPhotos);
+      persist({ answers: next, photos: nextPhotos });
+    }
   }
 
   function handleTextField(itemId, value) {
     const next = { ...textFields, [itemId]: value };
     setTextFields(next);
-    persist(answers, next, comments, signature, activeSection);
+    persist({ textFields: next });
+  }
+
+  function handlePhoto(itemId, photoData) {
+    const next = { ...photos, [itemId]: photoData };
+    setPhotos(next);
+    persist({ photos: next });
+  }
+
+  function handleRemovePhoto(itemId) {
+    const next = { ...photos };
+    delete next[itemId];
+    setPhotos(next);
+    persist({ photos: next });
   }
 
   function handleComments(val) {
     setComments(val);
-    persist(answers, textFields, val, signature, activeSection);
+    persist({ comments: val });
   }
 
   function handleSignature(val) {
     setSignature(val);
-    persist(answers, textFields, comments, val, activeSection);
+    persist({ signature: val });
   }
 
   function handleSectionChange(idx) {
     setActiveSection(idx);
-    persist(answers, textFields, comments, signature, idx);
+    persist({ activeSection: idx });
   }
 
   function handleReset() {
@@ -148,10 +182,12 @@ export default function App() {
   if (view === 'summary') {
     return (
       <Summary
+        sessionId={sessionId}
         storeNumber={storeNumber}
         date={date}
         answers={answers}
         textFields={textFields}
+        photos={photos}
         comments={comments}
         signature={signature}
         score={score}
@@ -176,15 +212,20 @@ export default function App() {
         sections={SECTIONS}
         answers={answers}
         textFields={textFields}
+        photos={photos}
         comments={comments}
         signature={signature}
         activeSection={activeSection}
+        sessionId={sessionId}
         onAnswer={handleAnswer}
         onTextField={handleTextField}
+        onPhoto={handlePhoto}
+        onRemovePhoto={handleRemovePhoto}
         onComments={handleComments}
         onSignature={handleSignature}
         onSectionChange={handleSectionChange}
         onFinish={() => setView('summary')}
+        onHome={() => setView('home')}
       />
     </div>
   );

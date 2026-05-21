@@ -5,15 +5,20 @@ export default function InspectionForm({
   sections,
   answers,
   textFields,
+  photos,
   comments,
   signature,
   activeSection,
+  sessionId,
   onAnswer,
   onTextField,
+  onPhoto,
+  onRemovePhoto,
   onComments,
   onSignature,
   onSectionChange,
   onFinish,
+  onHome,
 }) {
   const section = sections[activeSection];
   const isLast = activeSection === sections.length - 1;
@@ -34,18 +39,15 @@ export default function InspectionForm({
     }
   }
 
-  function sectionProgress(sec) {
-    const total = sec.items.length;
-    const done = sec.items.filter(i => answers[i.id] !== undefined).length;
-    return { total, done };
-  }
-
   return (
-    <div className="max-w-2xl mx-auto px-4 pb-32 pt-4">
+    <div className="max-w-2xl mx-auto px-4 pb-28 pt-4">
       <SectionNav
         sections={sections}
         activeSection={activeSection}
-        onSelect={onSectionChange}
+        onSelect={idx => {
+          onSectionChange(idx);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
         answers={answers}
       />
 
@@ -53,10 +55,12 @@ export default function InspectionForm({
         section={section}
         answers={answers}
         textFields={textFields}
+        photos={photos}
         onAnswer={onAnswer}
         onTextField={onTextField}
-        sectionIndex={activeSection}
-        totalSections={sections.length}
+        onPhoto={onPhoto}
+        onRemovePhoto={onRemovePhoto}
+        sessionId={sessionId}
       />
 
       {isLast && (
@@ -84,23 +88,44 @@ export default function InspectionForm({
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 flex gap-3 max-w-2xl mx-auto no-print">
-        <button
-          onClick={goPrev}
-          disabled={activeSection === 0}
-          className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold disabled:opacity-40 hover:bg-gray-50 transition-colors"
-        >
-          ← Previous
-        </button>
-        <button
-          onClick={goNext}
-          className={`flex-2 px-6 py-3 rounded-xl font-semibold text-white transition-colors ${
-            isLast ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-          style={{ flex: 2 }}
-        >
-          {isLast ? 'Finish & Review →' : 'Next →'}
-        </button>
+      {/* Bottom navigation — 3-button bar matching food service app style */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 no-print">
+        <div className="max-w-2xl mx-auto bg-white border-t border-gray-200 px-4 py-3">
+          <div className="flex items-center gap-2">
+            {/* Home */}
+            <button
+              onClick={onHome}
+              className="flex flex-col items-center justify-center w-14 py-1.5 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors flex-shrink-0"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              <span className="text-xs mt-0.5">Home</span>
+            </button>
+
+            {/* Previous */}
+            <button
+              onClick={goPrev}
+              disabled={activeSection === 0}
+              className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold disabled:opacity-40 hover:bg-gray-50 transition-colors text-sm"
+            >
+              ← Prev
+            </button>
+
+            {/* Next / Finish */}
+            <button
+              onClick={goNext}
+              className={`flex-[2] py-3 rounded-xl font-semibold text-white transition-colors text-sm ${
+                isLast
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {isLast ? 'Finish & Review →' : 'Next →'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
