@@ -37,14 +37,16 @@ export async function saveInspection({ storeNumber, date, signature, comments, s
 
   if (inspErr) throw inspErr;
 
-  const itemRows = Object.entries(answers).map(([itemId, answer]) => ({
-    inspection_id: inspection.id,
-    item_id: itemId,
-    section_id: itemId.split('_').slice(0, -1).join('_'),
-    answer,
-    text_value: textFields[itemId] || null,
-    photo_url: photos[itemId] || null,
-  }));
+  const itemRows = Object.entries(answers)
+    .filter(([, answer]) => answer === 'yes' || answer === 'no')
+    .map(([itemId, answer]) => ({
+      inspection_id: inspection.id,
+      item_id: itemId,
+      section_id: itemId.split('_').slice(0, -1).join('_'),
+      answer,
+      text_value: textFields[itemId] || null,
+      photo_url: photos[itemId] || null,
+    }));
 
   if (itemRows.length > 0) {
     const { error: itemsErr } = await supabase
