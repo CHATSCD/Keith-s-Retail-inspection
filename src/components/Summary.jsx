@@ -13,12 +13,12 @@ export default function Summary({
 
   const gradeColor =
     grade === 100 ? 'text-green-600' :
-    grade === 90  ? 'text-blue-600'  :
+    grade === 90  ? 'text-brand-600'  :
     grade === 80  ? 'text-yellow-600': 'text-red-600';
 
   const gradeBg =
     grade === 100 ? 'bg-green-50 border-green-200' :
-    grade === 90  ? 'bg-blue-50 border-blue-200'   :
+    grade === 90  ? 'bg-brand-50 border-brand-200'   :
     grade === 80  ? 'bg-yellow-50 border-yellow-200': 'bg-red-50 border-red-200';
 
   const photoUrls = Object.fromEntries(
@@ -136,11 +136,11 @@ export default function Summary({
   return (
     <div className="min-h-screen bg-gray-100 pb-28">
       {/* Header — title only, no buttons */}
-      <div className="bg-blue-600 text-white px-4 py-4">
+      <div className="bg-brand-600 text-white px-4 py-4">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="text-blue-300 text-xs font-semibold uppercase tracking-widest mb-0.5">Keith's Retail</div>
+          <div className="text-brand-200 text-xs font-semibold uppercase tracking-widest mb-0.5">Keith's Retail</div>
           <h1 className="text-base font-bold">DM Inspection Report</h1>
-          <p className="text-blue-200 text-xs mt-0.5">
+          <p className="text-brand-200 text-xs mt-0.5">
             Store #{storeNumber || '—'}&nbsp;&nbsp;|&nbsp;&nbsp;{date}
           </p>
         </div>
@@ -150,7 +150,7 @@ export default function Summary({
         {/* Save status banner */}
         <div className={`rounded-xl px-4 py-2.5 flex items-center gap-2 text-sm ${
           saveStatus === 'saved'  ? 'bg-green-50 text-green-700 border border-green-200' :
-          saveStatus === 'saving' ? 'bg-blue-50 text-blue-700 border border-blue-200'   :
+          saveStatus === 'saving' ? 'bg-brand-50 text-brand-700 border border-brand-200'   :
           saveStatus === 'error'  ? 'bg-red-50 text-red-700 border border-red-200'      :
           'bg-gray-50 text-gray-500 border border-gray-200'
         }`}>
@@ -378,7 +378,7 @@ export default function Summary({
             className={`w-full py-3.5 rounded-xl font-bold text-white text-sm transition-colors flex items-center justify-center gap-2 ${
               shareStatus === 'shared' || shareStatus === 'copied'
                 ? 'bg-green-600 hover:bg-green-700'
-                : 'bg-blue-600 hover:bg-blue-700'
+                : 'bg-brand-600 hover:bg-brand-700'
             } disabled:opacity-60`}
           >
             {shareStatus === 'shared' ? (

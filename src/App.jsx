@@ -4,6 +4,7 @@ import InspectionForm from './components/InspectionForm';
 import Summary from './components/Summary';
 import Header from './components/Header';
 import InspectionViewer from './components/InspectionViewer';
+import KLogo from './components/KLogo';
 import './index.css';
 
 const STORAGE_KEY = 'keithsRetailInspection';
@@ -178,11 +179,8 @@ export default function App() {
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
           <div className="mb-6">
-            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
+            <div className="w-16 h-16 bg-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-brand-200">
+              <KLogo className="w-9 h-9" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900">Keith's Store Inspection</h1>
             <p className="text-gray-500 mt-1 text-sm">DM Store Inspection Checklist</p>
@@ -191,7 +189,7 @@ export default function App() {
           <div className="space-y-3">
             <button
               onClick={startNew}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+              className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
             >
               Start New Inspection
             </button>

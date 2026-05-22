@@ -13,15 +13,15 @@ export default function SectionNav({ sections, activeSection, onSelect, answers 
             onClick={() => onSelect(idx)}
             className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors whitespace-nowrap ${
               isActive
-                ? 'bg-blue-600 text-white border-blue-600'
+                ? 'bg-brand-600 text-white border-brand-600'
                 : complete
                 ? 'bg-green-50 text-green-700 border-green-300'
-                : 'bg-white text-gray-600 border-gray-300 hover:border-blue-300'
+                : 'bg-white text-gray-600 border-gray-300 hover:border-brand-300'
             }`}
           >
             {complete && !isActive && <span className="mr-1">✓</span>}
             {sec.title}
-            <span className={`ml-1 text-xs ${isActive ? 'text-blue-200' : 'text-gray-400'}`}>
+            <span className={`ml-1 text-xs ${isActive ? 'text-brand-200' : 'text-gray-400'}`}>
               {done}/{total}
             </span>
           </button>

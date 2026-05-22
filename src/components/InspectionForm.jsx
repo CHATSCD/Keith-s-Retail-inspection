@@ -78,7 +78,7 @@ export default function InspectionForm({
                   value={staffing?.managerOnDuty || ''}
                   onChange={e => onStaffing('managerOnDuty', e.target.value)}
                   placeholder="Manager name"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
               <div>
@@ -89,7 +89,7 @@ export default function InspectionForm({
                   value={staffing?.employeesOnShift || ''}
                   onChange={e => onStaffing('employeesOnShift', e.target.value)}
                   placeholder="0"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
             </div>
@@ -102,7 +102,7 @@ export default function InspectionForm({
               onChange={e => onComments(e.target.value)}
               rows={3}
               placeholder="Add any comments..."
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
           <div>
@@ -112,7 +112,7 @@ export default function InspectionForm({
               value={signature}
               onChange={e => onSignature(e.target.value)}
               placeholder="Type name as signature"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
         </div>
@@ -149,7 +149,7 @@ export default function InspectionForm({
               className={`flex-[2] py-3 rounded-xl font-semibold text-white transition-colors text-sm ${
                 isLast
                   ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-blue-600 hover:bg-blue-700'
+                  : 'bg-brand-600 hover:bg-brand-700'
               }`}
             >
               {isLast ? 'Finish & Review →' : 'Next →'}
