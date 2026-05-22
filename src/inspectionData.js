@@ -142,39 +142,40 @@ export const SECTIONS = [
     isMaintenance: true,
     note: '* 1 Point deduction for each maintenance issue not reported and logged on the Maintenance Dispatch Log',
     items: [
-      { id: 'mt_1', text: 'All lights burning on the ID and Price sign', critical: true },
-      { id: 'mt_2', text: 'All canopy lights burning', critical: true },
-      { id: 'mt_3', text: 'All strip lights burning around the building and canopy', critical: true },
-      { id: 'mt_4', text: 'All pumps working', critical: true },
-      { id: 'mt_5', text: 'Canopy Uprights and pump bollards clean. Paint in good repair', critical: true },
-      { id: 'mt_6', text: 'Parking stripes in good repair', critical: true },
-      { id: 'mt_7', text: 'Pump hoses in good repair', critical: true },
-      { id: 'mt_8', text: 'All nozzles in good repair', critical: true },
-      { id: 'mt_9', text: 'Nozzle boots and splash guard in good repair', critical: true },
-      { id: 'mt_10', text: 'Pot holes on lot', critical: true },
-      { id: 'mt_11', text: 'All lights working throughout store', critical: true },
-      { id: 'mt_12', text: 'Cooler temperature is correct', critical: true },
-      { id: 'mt_13', text: 'Cooler door lights working', critical: true },
-      { id: 'mt_14', text: 'Hand dryers working', critical: true },
-      { id: 'mt_15', text: 'Automatic toilet/urinal flush working', critical: true },
-      { id: 'mt_16', text: 'Automatic sink faucet working', critical: true },
-      { id: 'mt_17', text: 'Changing tables good repair', critical: true },
-      { id: 'mt_18', text: 'Kitchen cooler and freezer at the correct temperature', critical: true },
-      { id: 'mt_19', text: 'Coffee and cappuccino machines working properly', critical: true },
-      { id: 'mt_20', text: 'Creamer machines working properly', critical: true },
-      { id: 'mt_21', text: 'Frozen drink machines working properly', critical: true },
-      { id: 'mt_22', text: 'Soft serve ice cream machines working', critical: true },
-      { id: 'mt_23', text: 'All food service display and cooking equipment working properly', critical: true },
-      { id: 'mt_24', text: 'Other:', critical: true, hasTextField: true },
-      { id: 'mt_25', text: 'Other:', critical: true, hasTextField: true },
+      { id: 'mt_1', text: 'All lights burning on the ID and Price sign', critical: true, isMaintenance: true },
+      { id: 'mt_2', text: 'All canopy lights burning', critical: true, isMaintenance: true },
+      { id: 'mt_3', text: 'All strip lights burning around the building and canopy', critical: true, isMaintenance: true },
+      { id: 'mt_4', text: 'All pumps working', critical: true, isMaintenance: true },
+      { id: 'mt_5', text: 'Canopy Uprights and pump bollards clean. Paint in good repair', critical: true, isMaintenance: true },
+      { id: 'mt_6', text: 'Parking stripes in good repair', critical: true, isMaintenance: true },
+      { id: 'mt_7', text: 'Pump hoses in good repair', critical: true, isMaintenance: true },
+      { id: 'mt_8', text: 'All nozzles in good repair', critical: true, isMaintenance: true },
+      { id: 'mt_9', text: 'Nozzle boots and splash guard in good repair', critical: true, isMaintenance: true },
+      { id: 'mt_10', text: 'Pot holes on lot', critical: true, isMaintenance: true },
+      { id: 'mt_11', text: 'All lights working throughout store', critical: true, isMaintenance: true },
+      { id: 'mt_12', text: 'Cooler temperature is correct', critical: true, isMaintenance: true },
+      { id: 'mt_13', text: 'Cooler door lights working', critical: true, isMaintenance: true },
+      { id: 'mt_14', text: 'Hand dryers working', critical: true, isMaintenance: true },
+      { id: 'mt_15', text: 'Automatic toilet/urinal flush working', critical: true, isMaintenance: true },
+      { id: 'mt_16', text: 'Automatic sink faucet working', critical: true, isMaintenance: true },
+      { id: 'mt_17', text: 'Changing tables good repair', critical: true, isMaintenance: true },
+      { id: 'mt_18', text: 'Kitchen cooler and freezer at the correct temperature', critical: true, isMaintenance: true },
+      { id: 'mt_19', text: 'Coffee and cappuccino machines working properly', critical: true, isMaintenance: true },
+      { id: 'mt_20', text: 'Creamer machines working properly', critical: true, isMaintenance: true },
+      { id: 'mt_21', text: 'Frozen drink machines working properly', critical: true, isMaintenance: true },
+      { id: 'mt_22', text: 'Soft serve ice cream machines working', critical: true, isMaintenance: true },
+      { id: 'mt_23', text: 'All food service display and cooking equipment working properly', critical: true, isMaintenance: true },
+      { id: 'mt_24', text: 'Other:', critical: true, hasTextField: true, hasNA: true },
+      { id: 'mt_25', text: 'Other:', critical: true, hasTextField: true, hasNA: true },
     ],
   },
 ];
 
 export function calcScore(answers) {
   const allItems = SECTIONS.flatMap(s => s.items);
-  const total = allItems.length;
-  const correct = allItems.filter(item => answers[item.id] === 'yes').length;
+  const scorableItems = allItems.filter(item => answers[item.id] !== 'na');
+  const total = scorableItems.length;
+  const correct = scorableItems.filter(item => answers[item.id] === 'yes').length;
   const pct = total > 0 ? (correct / total) * 100 : 0;
 
   let grade = 0;

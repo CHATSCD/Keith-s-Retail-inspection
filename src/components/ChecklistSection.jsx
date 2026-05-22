@@ -11,8 +11,9 @@ export default function ChecklistSection({
   onRemovePhoto,
   sessionId,
 }) {
-  const done = section.items.filter(i => answers[i.id] !== undefined).length;
-  const total = section.items.length;
+  const scorable = section.items.filter(i => answers[i.id] !== 'na');
+  const done = scorable.filter(i => answers[i.id] !== undefined).length;
+  const total = scorable.length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
   return (
@@ -40,9 +41,12 @@ export default function ChecklistSection({
             index={idx + 1}
             answer={answers[item.id]}
             textValue={textFields[item.id] || ''}
+            logValue={textFields[item.id + '_log'] || ''}
+            maintValue={textFields[item.id + '_maint'] || ''}
             photoData={photos[item.id] || null}
             onAnswer={val => onAnswer(item.id, val)}
             onTextField={val => onTextField(item.id, val)}
+            onSetField={(key, val) => onTextField(key, val)}
             onPhoto={onPhoto}
             onRemovePhoto={onRemovePhoto}
             sessionId={sessionId}
