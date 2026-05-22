@@ -4,6 +4,7 @@ import InspectionForm from './components/InspectionForm';
 import Summary from './components/Summary';
 import Header from './components/Header';
 import InspectionViewer from './components/InspectionViewer';
+import AdminPage from './components/AdminPage';
 import './index.css';
 
 const STORAGE_KEY = 'keithsRetailInspection';
@@ -28,10 +29,16 @@ function getViewId() {
   return params.get('view') || null;
 }
 
+function isAdminUrl() {
+  return new URLSearchParams(window.location.search).has('admin');
+}
+
 export default function App() {
   const viewId = getViewId();
 
-  const [view, setView] = useState(viewId ? 'viewer' : 'home');
+  const [view, setView] = useState(
+    isAdminUrl() ? 'admin' : viewId ? 'viewer' : 'home'
+  );
   const [sessionId, setSessionId] = useState('');
   const [storeNumber, setStoreNumber] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -167,6 +174,11 @@ export default function App() {
 
   const score = calcScore(answers);
 
+  // ── Admin ──
+  if (view === 'admin') {
+    return <AdminPage onHome={goHome} />;
+  }
+
   // ── Shared-link viewer ──
   if (view === 'viewer') {
     return <InspectionViewer inspectionId={viewId} onHome={goHome} />;
@@ -203,6 +215,13 @@ export default function App() {
           <p className="text-xs text-gray-400 mt-6">
             95–100% = 100%&nbsp;&nbsp;|&nbsp;&nbsp;90–94% = 90%&nbsp;&nbsp;|&nbsp;&nbsp;85–89% = 80%&nbsp;&nbsp;|&nbsp;&nbsp;&lt;85% = 0%
           </p>
+
+          <button
+            onClick={() => setView('admin')}
+            className="mt-4 text-xs text-gray-400 hover:text-gray-600 underline"
+          >
+            Admin
+          </button>
         </div>
       </div>
     );
