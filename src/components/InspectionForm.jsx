@@ -43,6 +43,55 @@ export default function InspectionForm({
 
   return (
     <div className="max-w-2xl mx-auto px-4 pb-28 pt-4">
+
+      {/* ── Inspector & Staffing — always visible at top ── */}
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-4 space-y-3">
+        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Inspection Details</div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Inspector Name</label>
+            <input
+              type="text"
+              value={signature || ''}
+              onChange={e => onSignature(e.target.value)}
+              placeholder="Enter name"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Manager on Duty</label>
+            <input
+              type="text"
+              value={staffing?.managerOnDuty || ''}
+              onChange={e => onStaffing('managerOnDuty', e.target.value)}
+              placeholder="Manager name"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Employees on Shift</label>
+            <input
+              type="number"
+              min="0"
+              value={staffing?.employeesOnShift || ''}
+              onChange={e => onStaffing('employeesOnShift', e.target.value)}
+              placeholder="0"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Comments</label>
+            <input
+              type="text"
+              value={comments || ''}
+              onChange={e => onComments(e.target.value)}
+              placeholder="Optional notes"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+        </div>
+      </div>
+
       <SectionNav
         sections={sections}
         activeSection={activeSection}
@@ -65,64 +114,10 @@ export default function InspectionForm({
         sessionId={sessionId}
       />
 
-      {isLast && (
-        <div className="mt-4 bg-white rounded-xl shadow-sm p-4 space-y-4">
-          {/* Staffing */}
-          <div>
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Staffing</div>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Manager on Duty</label>
-                <input
-                  type="text"
-                  value={staffing?.managerOnDuty || ''}
-                  onChange={e => onStaffing('managerOnDuty', e.target.value)}
-                  placeholder="Manager name"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Employees on Shift</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={staffing?.employeesOnShift || ''}
-                  onChange={e => onStaffing('employeesOnShift', e.target.value)}
-                  placeholder="0"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Comments</label>
-            <textarea
-              value={comments}
-              onChange={e => onComments(e.target.value)}
-              rows={3}
-              placeholder="Add any comments..."
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Signature</label>
-            <input
-              type="text"
-              value={signature}
-              onChange={e => onSignature(e.target.value)}
-              placeholder="Type name as signature"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Bottom navigation — 3-button bar matching food service app style */}
+      {/* Bottom navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-30 no-print">
         <div className="max-w-2xl mx-auto bg-white border-t border-gray-200 px-4 py-3">
           <div className="flex items-center gap-2">
-            {/* Home */}
             <button
               onClick={onHome}
               className="flex flex-col items-center justify-center w-14 py-1.5 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors flex-shrink-0"
@@ -134,7 +129,6 @@ export default function InspectionForm({
               <span className="text-xs mt-0.5">Home</span>
             </button>
 
-            {/* Previous */}
             <button
               onClick={goPrev}
               disabled={activeSection === 0}
@@ -143,13 +137,12 @@ export default function InspectionForm({
               ← Prev
             </button>
 
-            {/* Next / Finish */}
             <button
               onClick={goNext}
               className={`flex-[2] py-3 rounded-xl font-semibold text-white transition-colors text-sm ${
                 isLast
                   ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-brand-600 hover:bg-brand-700'
+                  : 'bg-brand-500 hover:bg-brand-600'
               }`}
             >
               {isLast ? 'Finish & Review →' : 'Next →'}
