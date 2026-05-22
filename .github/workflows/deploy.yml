@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [claude/retail-inspection-app-Vcdsg, main]
+    branches: [claude/retail-inspection-app-Vcdsg, claude/brand-keiths-colors-logo-c9vO3, main]
   workflow_dispatch:
 
 permissions:
