@@ -18,7 +18,7 @@ export default function InspectionViewer({ inspectionId, onHome }) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <svg className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+          <svg className="w-8 h-8 animate-spin text-brand-600 mx-auto mb-2" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
           </svg>
@@ -34,7 +34,7 @@ export default function InspectionViewer({ inspectionId, onHome }) {
         <div className="bg-white rounded-2xl shadow p-6 text-center max-w-sm">
           <p className="text-red-600 font-semibold mb-2">Could not load inspection</p>
           <p className="text-gray-500 text-sm mb-4">{error}</p>
-          <button onClick={onHome} className="text-blue-600 text-sm font-medium">← Go Home</button>
+          <button onClick={onHome} className="text-brand-600 text-sm font-medium">← Go Home</button>
         </div>
       </div>
     );
@@ -52,11 +52,11 @@ export default function InspectionViewer({ inspectionId, onHome }) {
   const grade = inspection.score_grade;
   const gradeColor =
     grade === 100 ? 'text-green-600' :
-    grade === 90  ? 'text-blue-600'  :
+    grade === 90  ? 'text-brand-600'  :
     grade === 80  ? 'text-yellow-600': 'text-red-600';
   const gradeBg =
     grade === 100 ? 'bg-green-50 border-green-200' :
-    grade === 90  ? 'bg-blue-50 border-blue-200'   :
+    grade === 90  ? 'bg-brand-50 border-brand-200'   :
     grade === 80  ? 'bg-yellow-50 border-yellow-200': 'bg-red-50 border-red-200';
 
   const failedItems = SECTIONS.flatMap(sec =>
@@ -68,12 +68,12 @@ export default function InspectionViewer({ inspectionId, onHome }) {
   return (
     <div className="min-h-screen bg-gray-100 pb-24">
       {/* Header */}
-      <div className="bg-blue-600 text-white px-4 py-4 no-print">
+      <div className="bg-brand-600 text-white px-4 py-4 no-print">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="text-sm font-semibold">Keith's Store Inspection</div>
           <button
             onClick={() => window.print()}
-            className="text-sm bg-white text-blue-600 font-semibold px-3 py-1 rounded-lg hover:bg-blue-50"
+            className="text-sm bg-white text-brand-700 font-semibold px-3 py-1 rounded-lg hover:bg-brand-50"
           >
             Print
           </button>

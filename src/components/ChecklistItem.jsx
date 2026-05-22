@@ -48,7 +48,7 @@ export default function ChecklistItem({
               value={textValue}
               onChange={e => onTextField(e.target.value)}
               placeholder="Describe..."
-              className="mt-1 w-full border-b border-gray-300 text-sm py-0.5 focus:outline-none focus:border-blue-500 bg-transparent"
+              className="mt-1 w-full border-b border-gray-300 text-sm py-0.5 focus:outline-none focus:border-brand-500 bg-transparent"
             />
           )}
 
@@ -86,7 +86,7 @@ export default function ChecklistItem({
                 <button
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
-                  className="flex items-center gap-1.5 text-xs text-blue-600 border border-blue-300 bg-blue-50 px-2.5 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-brand-600 border border-brand-300 bg-brand-50 px-2.5 py-1.5 rounded-lg hover:bg-brand-100 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
