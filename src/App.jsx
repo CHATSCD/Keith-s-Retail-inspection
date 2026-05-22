@@ -4,6 +4,7 @@ import InspectionForm from './components/InspectionForm';
 import Summary from './components/Summary';
 import Header from './components/Header';
 import InspectionViewer from './components/InspectionViewer';
+import AdminPage from './components/AdminPage';
 import './index.css';
 
 const STORAGE_KEY = 'keithsRetailInspection';
@@ -28,10 +29,16 @@ function getViewId() {
   return params.get('view') || null;
 }
 
+function isAdminUrl() {
+  return new URLSearchParams(window.location.search).has('admin');
+}
+
 export default function App() {
   const viewId = getViewId();
 
-  const [view, setView] = useState(viewId ? 'viewer' : 'home');
+  const [view, setView] = useState(
+    isAdminUrl() ? 'admin' : viewId ? 'viewer' : 'home'
+  );
   const [sessionId, setSessionId] = useState('');
   const [storeNumber, setStoreNumber] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -167,6 +174,11 @@ export default function App() {
 
   const score = calcScore(answers);
 
+  // ── Admin ──
+  if (view === 'admin') {
+    return <AdminPage onHome={goHome} />;
+  }
+
   // ── Shared-link viewer ──
   if (view === 'viewer') {
     return <InspectionViewer inspectionId={viewId} onHome={goHome} />;
@@ -203,6 +215,17 @@ export default function App() {
           <p className="text-xs text-gray-400 mt-6">
             95–100% = 100%&nbsp;&nbsp;|&nbsp;&nbsp;90–94% = 90%&nbsp;&nbsp;|&nbsp;&nbsp;85–89% = 80%&nbsp;&nbsp;|&nbsp;&nbsp;&lt;85% = 0%
           </p>
+
+          <button
+            onClick={() => setView('admin')}
+            className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+          >
+            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            Admin Panel
+          </button>
         </div>
       </div>
     );

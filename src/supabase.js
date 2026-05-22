@@ -37,14 +37,16 @@ export async function saveInspection({ storeNumber, date, signature, comments, s
 
   if (inspErr) throw inspErr;
 
-  const itemRows = Object.entries(answers).map(([itemId, answer]) => ({
-    inspection_id: inspection.id,
-    item_id: itemId,
-    section_id: itemId.split('_').slice(0, -1).join('_'),
-    answer,
-    text_value: textFields[itemId] || null,
-    photo_url: photos[itemId] || null,
-  }));
+  const itemRows = Object.entries(answers)
+    .filter(([, answer]) => answer === 'yes' || answer === 'no')
+    .map(([itemId, answer]) => ({
+      inspection_id: inspection.id,
+      item_id: itemId,
+      section_id: itemId.split('_').slice(0, -1).join('_'),
+      answer,
+      text_value: textFields[itemId] || null,
+      photo_url: photos[itemId] || null,
+    }));
 
   if (itemRows.length > 0) {
     const { error: itemsErr } = await supabase
@@ -54,6 +56,21 @@ export async function saveInspection({ storeNumber, date, signature, comments, s
   }
 
   return inspection.id;
+}
+
+export async function fetchAllInspections() {
+  const { data, error } = await supabase
+    .from('retail_inspections')
+    .select('id, store_number, date, inspector_signature, score_grade, score_pct, correct_count, total_count, comments, created_at')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteInspection(id) {
+  await supabase.from('retail_inspection_items').delete().eq('inspection_id', id);
+  const { error } = await supabase.from('retail_inspections').delete().eq('id', id);
+  if (error) throw error;
 }
 
 export async function fetchInspection(id) {

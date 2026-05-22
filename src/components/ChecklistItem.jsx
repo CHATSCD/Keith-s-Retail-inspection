@@ -1,12 +1,43 @@
 import { useRef, useState } from 'react';
 import { uploadPhoto } from '../supabase';
 
+function MiniToggle({ label, value, onChange }) {
+  return (
+    <div className="flex items-center justify-between py-1.5 px-3 bg-gray-50 rounded-lg">
+      <span className="text-xs text-gray-600 flex-1">{label}</span>
+      <div className="flex gap-1.5 flex-shrink-0">
+        <button
+          onClick={() => onChange(value === 'yes' ? '' : 'yes')}
+          className={`px-2.5 py-1 rounded text-xs font-bold border transition-all ${
+            value === 'yes'
+              ? 'bg-green-500 border-green-500 text-white'
+              : 'bg-white border-gray-300 text-gray-500 hover:border-green-400 hover:text-green-600'
+          }`}
+        >
+          Yes
+        </button>
+        <button
+          onClick={() => onChange(value === 'no' ? '' : 'no')}
+          className={`px-2.5 py-1 rounded text-xs font-bold border transition-all ${
+            value === 'no'
+              ? 'bg-red-500 border-red-500 text-white'
+              : 'bg-white border-gray-300 text-gray-500 hover:border-red-400 hover:text-red-600'
+          }`}
+        >
+          No
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function ChecklistItem({
-  item, index, answer, textValue, photoData,
-  onAnswer, onTextField, onPhoto, onRemovePhoto, sessionId,
+  item, index, answer, textValue, photoData, logValue, maintValue,
+  onAnswer, onTextField, onSetField, onPhoto, onRemovePhoto, sessionId,
 }) {
   const isYes = answer === 'yes';
-  const isNo = answer === 'no';
+  const isNo  = answer === 'no';
+  const isNA  = answer === 'na';
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
 
@@ -14,7 +45,6 @@ export default function ChecklistItem({
     const file = e.target.files?.[0];
     if (!file) return;
     const localUrl = URL.createObjectURL(file);
-    // Show immediately with local preview, upload in background
     onPhoto(item.id, { url: localUrl, uploading: true });
     setUploading(true);
     try {
@@ -25,15 +55,14 @@ export default function ChecklistItem({
       onPhoto(item.id, { url: localUrl, uploading: false, error: true });
     } finally {
       setUploading(false);
-      // reset input so same file can be re-selected
       e.target.value = '';
     }
   }
 
+  const rowBg = isNo ? 'bg-red-50' : isYes ? 'bg-green-50' : isNA ? 'bg-gray-50' : 'bg-white';
+
   return (
-    <div className={`px-4 py-3 transition-colors ${
-      isNo ? 'bg-red-50' : isYes ? 'bg-green-50' : 'bg-white'
-    }`}>
+    <div className={`px-4 py-3 transition-colors ${rowBg}`}>
       <div className="flex items-start gap-3">
         <span className="text-xs text-gray-400 mt-0.5 w-5 flex-shrink-0 text-right">{index}</span>
 
@@ -42,7 +71,7 @@ export default function ChecklistItem({
             {item.critical && <span className="text-amber-600 font-semibold mr-0.5">*</span>}
             {item.text}
           </p>
-          {item.hasTextField && (
+          {item.hasTextField && !isNA && (
             <input
               type="text"
               value={textValue}
@@ -52,9 +81,10 @@ export default function ChecklistItem({
             />
           )}
 
-          {/* Photo area — shown when answered No */}
+          {/* Photo + maintenance reporting — shown on No */}
           {isNo && (
-            <div className="mt-2">
+            <div className="mt-2 space-y-2">
+              {/* Camera */}
               {photoData ? (
                 <div className="relative inline-block">
                   <img
@@ -104,14 +134,41 @@ export default function ChecklistItem({
                 className="hidden"
                 onChange={handleFileChange}
               />
+
+              {/* Maintenance reporting sub-questions */}
+              {item.isMaintenance && (
+                <div className="space-y-1.5 pt-1">
+                  <MiniToggle
+                    label="Reported on Dispatch Log?"
+                    value={logValue}
+                    onChange={val => onSetField(item.id + '_log', val)}
+                  />
+                  <MiniToggle
+                    label="Reported to Maintenance?"
+                    value={maintValue}
+                    onChange={val => onSetField(item.id + '_maint', val)}
+                  />
+                  {(logValue === 'no' || maintValue === 'no') && (
+                    <p className="text-xs text-red-600 font-semibold px-1">
+                      ⚠ Deduct 1 point — not fully reported/logged
+                    </p>
+                  )}
+                  {logValue === 'yes' && maintValue === 'yes' && (
+                    <p className="text-xs text-green-700 font-semibold px-1">
+                      ✓ Reported &amp; logged — no additional deduction
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        <div className="flex gap-2 flex-shrink-0">
+        {/* Yes / No / NA buttons */}
+        <div className="flex gap-1.5 flex-shrink-0">
           <button
             onClick={() => onAnswer(isYes ? undefined : 'yes')}
-            className={`w-12 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${
+            className={`w-11 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${
               isYes
                 ? 'bg-green-500 border-green-500 text-white shadow-sm'
                 : 'bg-white border-gray-300 text-gray-500 hover:border-green-400 hover:text-green-600'
@@ -121,7 +178,7 @@ export default function ChecklistItem({
           </button>
           <button
             onClick={() => onAnswer(isNo ? undefined : 'no')}
-            className={`w-12 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${
+            className={`w-11 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${
               isNo
                 ? 'bg-red-500 border-red-500 text-white shadow-sm'
                 : 'bg-white border-gray-300 text-gray-500 hover:border-red-400 hover:text-red-600'
@@ -129,6 +186,18 @@ export default function ChecklistItem({
           >
             No
           </button>
+          {item.hasNA && (
+            <button
+              onClick={() => onAnswer(isNA ? undefined : 'na')}
+              className={`w-11 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${
+                isNA
+                  ? 'bg-gray-500 border-gray-500 text-white shadow-sm'
+                  : 'bg-white border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-600'
+              }`}
+            >
+              N/A
+            </button>
+          )}
         </div>
       </div>
     </div>
