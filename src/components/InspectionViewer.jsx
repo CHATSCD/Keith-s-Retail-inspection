@@ -68,12 +68,12 @@ export default function InspectionViewer({ inspectionId, onHome }) {
   return (
     <div className="min-h-screen bg-gray-100 pb-24">
       {/* Header */}
-      <div className="bg-brand-600 text-white px-4 py-4 no-print">
+      <div className="bg-brand-500 text-white px-4 py-4 no-print">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="text-sm font-semibold">Keith's Store Inspection</div>
           <button
             onClick={() => window.print()}
-            className="text-sm bg-white text-brand-700 font-semibold px-3 py-1 rounded-lg hover:bg-brand-50"
+            className="text-sm bg-white text-brand-600 font-semibold px-3 py-1 rounded-lg hover:bg-brand-50"
           >
             Print
           </button>

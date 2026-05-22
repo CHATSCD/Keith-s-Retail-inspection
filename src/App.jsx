@@ -4,7 +4,6 @@ import InspectionForm from './components/InspectionForm';
 import Summary from './components/Summary';
 import Header from './components/Header';
 import InspectionViewer from './components/InspectionViewer';
-import KLogo from './components/KLogo';
 import './index.css';
 
 const STORAGE_KEY = 'keithsRetailInspection';
@@ -176,20 +175,18 @@ export default function App() {
   // ── Home screen ──
   if (view === 'home') {
     return (
-      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-brand-500 flex flex-col items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
           <div className="mb-6">
-            <div className="w-16 h-16 bg-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-brand-200">
-              <KLogo className="w-9 h-9" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">Keith's Store Inspection</h1>
-            <p className="text-gray-500 mt-1 text-sm">DM Store Inspection Checklist</p>
+            <img src="/logo.png" alt="Keith's Superstores" className="h-20 object-contain mx-auto mb-4" />
+            <h1 className="text-xl font-bold text-gray-900">DM Store Inspection</h1>
+            <p className="text-gray-500 mt-1 text-sm">District Manager Checklist</p>
           </div>
 
           <div className="space-y-3">
             <button
               onClick={startNew}
-              className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+              className="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
             >
               Start New Inspection
             </button>

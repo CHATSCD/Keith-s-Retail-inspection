@@ -136,11 +136,11 @@ export default function Summary({
   return (
     <div className="min-h-screen bg-gray-100 pb-28">
       {/* Header — title only, no buttons */}
-      <div className="bg-brand-600 text-white px-4 py-4">
+      <div className="bg-brand-500 text-white px-4 py-4">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="text-brand-200 text-xs font-semibold uppercase tracking-widest mb-0.5">Keith's Retail</div>
+          <img src="/logo.png" alt="Keith's Superstores" className="h-10 object-contain mx-auto mb-2" />
           <h1 className="text-base font-bold">DM Inspection Report</h1>
-          <p className="text-brand-200 text-xs mt-0.5">
+          <p className="text-brand-100 text-xs mt-0.5">
             Store #{storeNumber || '—'}&nbsp;&nbsp;|&nbsp;&nbsp;{date}
           </p>
         </div>
@@ -378,7 +378,7 @@ export default function Summary({
             className={`w-full py-3.5 rounded-xl font-bold text-white text-sm transition-colors flex items-center justify-center gap-2 ${
               shareStatus === 'shared' || shareStatus === 'copied'
                 ? 'bg-green-600 hover:bg-green-700'
-                : 'bg-brand-600 hover:bg-brand-700'
+                : 'bg-brand-500 hover:bg-brand-600'
             } disabled:opacity-60`}
           >
             {shareStatus === 'shared' ? (

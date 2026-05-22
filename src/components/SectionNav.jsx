@@ -13,7 +13,7 @@ export default function SectionNav({ sections, activeSection, onSelect, answers 
             onClick={() => onSelect(idx)}
             className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors whitespace-nowrap ${
               isActive
-                ? 'bg-brand-600 text-white border-brand-600'
+                ? 'bg-brand-500 text-white border-brand-500'
                 : complete
                 ? 'bg-green-50 text-green-700 border-green-300'
                 : 'bg-white text-gray-600 border-gray-300 hover:border-brand-300'
