@@ -226,6 +226,14 @@ export default function App() {
             </svg>
             Admin Panel
           </button>
+
+          <p className="text-xs text-gray-300 mt-5 leading-relaxed">
+            Licensed to Keithco
+            <br />
+            © 2026 Shaun Christopher Dubuisson
+            <br />
+            All Rights Reserved
+          </p>
         </div>
       </div>
     );
