@@ -101,8 +101,8 @@ export async function fetchStores() {
   return data;
 }
 
-export async function upsertStore({ id, store_number, name, address, lat, lng }) {
-  const row = { store_number, name: name || null, address: address || null, lat: lat || null, lng: lng || null };
+export async function upsertStore({ id, store_number, name, address, lat, lng, dm_name }) {
+  const row = { store_number, name: name || null, address: address || null, lat: lat || null, lng: lng || null, dm_name: dm_name || null };
   if (id) {
     const { error } = await supabase.from('stores').update(row).eq('id', id);
     if (error) throw error;

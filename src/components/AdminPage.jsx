@@ -14,7 +14,7 @@ function gradeColor(g) {
 function StoresTab() {
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ store_number: '', name: '', address: '' });
+  const [form, setForm] = useState({ store_number: '', name: '', address: '', dm_name: '' });
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
@@ -27,11 +27,11 @@ function StoresTab() {
 
   function startEdit(s) {
     setEditing(s.id);
-    setForm({ store_number: s.store_number, name: s.name || '', address: s.address || '' });
+    setForm({ store_number: s.store_number, name: s.name || '', address: s.address || '', dm_name: s.dm_name || '' });
     setGeoError('');
   }
 
-  function cancelEdit() { setEditing(null); setForm({ store_number: '', name: '', address: '' }); setGeoError(''); }
+  function cancelEdit() { setEditing(null); setForm({ store_number: '', name: '', address: '', dm_name: '' }); setGeoError(''); }
 
   async function handleGeocode() {
     if (!form.address.trim()) return;
@@ -85,11 +85,17 @@ function StoresTab() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Name (optional)</label>
-              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                placeholder="Downtown"
+              <label className="block text-xs text-gray-500 mb-1">DM Name</label>
+              <input value={form.dm_name} onChange={e => setForm(f => ({ ...f, dm_name: e.target.value }))}
+                placeholder="Kim"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
             </div>
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Name (optional)</label>
+            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              placeholder="Downtown"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Address</label>
@@ -136,8 +142,9 @@ function StoresTab() {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-gray-900">Store #{s.store_number}{s.name ? ` — ${s.name}` : ''}</div>
                   <div className="text-xs text-gray-400 truncate">
+                    {s.dm_name && <span className="text-brand-600 font-medium mr-1">DM: {s.dm_name} ·</span>}
                     {s.address || <span className="italic">No address</span>}
-                    {s.lat && s.lng ? <span className="text-green-600 ml-1">📍 on map</span> : ''}
+                    {s.lat && s.lng ? <span className="text-green-600 ml-1">📍</span> : ''}
                   </div>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">

@@ -4,7 +4,6 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { fetchStores } from '../supabase';
 
-// Fix leaflet default icon paths broken by bundlers
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -12,7 +11,23 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-function makeIcon(label, selected) {
+const DM_COLORS = {
+  'Kim':    '#0099ff',
+  'Tammy':  '#22c55e',
+  'Matt':   '#f97316',
+  'Melissa':'#a855f7',
+  'Angela': '#ec4899',
+  'Dawn':   '#14b8a6',
+  'Kit':    '#eab308',
+};
+
+function dmColor(dm) {
+  return DM_COLORS[dm] || '#374151';
+}
+
+function makeIcon(label, color, selected) {
+  const fill = selected ? color : '#374151';
+  const textColor = selected ? color : '#374151';
   return L.divIcon({
     className: '',
     iconAnchor: [18, 36],
@@ -21,11 +36,11 @@ function makeIcon(label, selected) {
       <div style="position:relative;width:36px;text-align:center">
         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
           <path d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 26 18 26S36 31.5 36 18C36 8.06 27.94 0 18 0z"
-            fill="${selected ? '#0099ff' : '#374151'}" />
+            fill="${fill}" />
           <circle cx="18" cy="18" r="10" fill="white"/>
         </svg>
         <div style="position:absolute;top:10px;left:0;right:0;text-align:center;
-          font-size:9px;font-weight:800;color:${selected ? '#0099ff' : '#374151'};
+          font-size:9px;font-weight:800;color:${textColor};
           font-family:sans-serif;line-height:1">${label}</div>
       </div>`,
   });
@@ -41,7 +56,6 @@ function FitBounds({ stores }) {
   return null;
 }
 
-// Nearest-neighbor TSP approximation starting from a given point
 function optimizeRoute(start, stores) {
   const unvisited = [...stores];
   const route = [];
@@ -68,6 +82,7 @@ export default function MapPage({ onHome }) {
   const [route, setRoute] = useState([]);
   const [userPos, setUserPos] = useState(null);
   const [locating, setLocating] = useState(false);
+  const [filterDm, setFilterDm] = useState('all');
 
   useEffect(() => {
     fetchStores()
@@ -76,9 +91,12 @@ export default function MapPage({ onHome }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const mappable = stores.filter(s => s.lat && s.lng);
-  const unmapped  = stores.filter(s => !s.lat || !s.lng);
-  const center = mappable.length ? [mappable[0].lat, mappable[0].lng] : [30.5, -91.1];
+  const allDms = [...new Set(stores.map(s => s.dm_name).filter(Boolean))].sort();
+  const visibleStores = filterDm === 'all' ? stores : stores.filter(s => s.dm_name === filterDm);
+  const mappable = visibleStores.filter(s => s.lat && s.lng);
+  const unmapped  = visibleStores.filter(s => !s.lat || !s.lng);
+  const allMappable = stores.filter(s => s.lat && s.lng);
+  const center = allMappable.length ? [allMappable[0].lat, allMappable[0].lng] : [30.5, -91.1];
 
   function toggleStore(id) {
     setSelected(prev => {
@@ -124,6 +142,14 @@ export default function MapPage({ onHome }) {
 
   const routeIds = new Set(route.map(s => s.id));
 
+  // Group stores by DM for the list
+  const groupedStores = {};
+  visibleStores.forEach(s => {
+    const dm = s.dm_name || 'Unassigned';
+    if (!groupedStores[dm]) groupedStores[dm] = [];
+    groupedStores[dm].push(s);
+  });
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Header */}
@@ -157,11 +183,6 @@ export default function MapPage({ onHome }) {
 
       {!loading && !error && stores.length === 0 && (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-          <svg className="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
           <p className="text-gray-500 font-medium">No stores added yet</p>
           <p className="text-gray-400 text-sm mt-1">Go to Admin → Stores to add store locations</p>
         </div>
@@ -178,15 +199,18 @@ export default function MapPage({ onHome }) {
                 attribution='© <a href="https://openstreetmap.org">OpenStreetMap</a>'
               />
               <FitBounds stores={mappable} />
-              {mappable.map((s, i) => {
+              {allMappable.map(s => {
                 const routeIdx = route.findIndex(r => r.id === s.id);
                 const label = routeIdx >= 0 ? String(routeIdx + 1) : `#${s.store_number}`;
+                const isVisible = filterDm === 'all' || s.dm_name === filterDm;
+                if (!isVisible) return null;
                 return (
                   <Marker key={s.id} position={[s.lat, s.lng]}
-                    icon={makeIcon(label, selected.has(s.id))}
+                    icon={makeIcon(label, dmColor(s.dm_name), selected.has(s.id))}
                     eventHandlers={{ click: () => toggleStore(s.id) }}>
                     <Popup>
                       <div className="text-sm font-semibold">Store #{s.store_number}</div>
+                      {s.dm_name && <div className="text-xs font-medium" style={{ color: dmColor(s.dm_name) }}>DM: {s.dm_name}</div>}
                       {s.name && <div className="text-xs text-gray-600">{s.name}</div>}
                       {s.address && <div className="text-xs text-gray-500 mt-0.5">{s.address}</div>}
                     </Popup>
@@ -199,9 +223,32 @@ export default function MapPage({ onHome }) {
           {/* Controls */}
           <div className="flex-1 overflow-y-auto p-3 space-y-3">
 
-            {/* Action bar */}
-            <div className="bg-white rounded-xl shadow-sm p-3">
+            {/* DM filter + action bar */}
+            <div className="bg-white rounded-xl shadow-sm p-3 space-y-2">
+              {/* DM filter */}
               <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-semibold text-gray-500">District:</span>
+                <button
+                  onClick={() => { setFilterDm('all'); clearAll(); }}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
+                    filterDm === 'all' ? 'bg-gray-800 text-white border-gray-800' : 'bg-gray-50 text-gray-600 border-gray-200'
+                  }`}>
+                  All
+                </button>
+                {allDms.map(dm => (
+                  <button key={dm}
+                    onClick={() => { setFilterDm(dm); clearAll(); }}
+                    style={filterDm === dm ? { backgroundColor: dmColor(dm), borderColor: dmColor(dm), color: '#fff' } : {}}
+                    className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
+                      filterDm === dm ? '' : 'bg-gray-50 text-gray-600 border-gray-200'
+                    }`}>
+                    {dm}
+                  </button>
+                ))}
+              </div>
+
+              {/* Action bar */}
+              <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-gray-100">
                 <button onClick={selectAll}
                   className="text-xs bg-brand-50 text-brand-700 border border-brand-200 font-semibold px-3 py-1.5 rounded-lg">
                   Select All
@@ -225,7 +272,7 @@ export default function MapPage({ onHome }) {
                 </button>
               </div>
               {selected.size > 0 && (
-                <p className="text-xs text-gray-400 mt-2">{selected.size} store{selected.size > 1 ? 's' : ''} selected — tap map pins or list below</p>
+                <p className="text-xs text-gray-400">{selected.size} store{selected.size > 1 ? 's' : ''} selected — tap map pins or list below</p>
               )}
             </div>
 
@@ -246,13 +293,15 @@ export default function MapPage({ onHome }) {
                 <div className="divide-y divide-gray-50">
                   {route.map((s, i) => (
                     <div key={s.id} className="px-4 py-3 flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-full bg-brand-500 text-white text-xs font-black flex items-center justify-center flex-shrink-0">
+                      <div className="w-7 h-7 rounded-full text-white text-xs font-black flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: dmColor(s.dm_name) }}>
                         {i + 1}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold text-gray-900">
                           Store #{s.store_number}{s.name ? ` — ${s.name}` : ''}
                         </div>
+                        {s.dm_name && <div className="text-xs font-medium" style={{ color: dmColor(s.dm_name) }}>DM: {s.dm_name}</div>}
                         {s.address && <div className="text-xs text-gray-400 truncate">{s.address}</div>}
                       </div>
                     </div>
@@ -261,52 +310,60 @@ export default function MapPage({ onHome }) {
               </div>
             )}
 
-            {/* Store list */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
-                <h2 className="font-bold text-gray-900 text-sm">All Stores</h2>
-              </div>
-              <div className="divide-y divide-gray-50">
-                {mappable.map(s => (
-                  <button key={s.id} onClick={() => toggleStore(s.id)}
-                    className={`w-full px-4 py-3 flex items-center gap-3 text-left transition-colors ${
-                      selected.has(s.id) ? 'bg-brand-50' : 'hover:bg-gray-50'
-                    }`}>
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                      selected.has(s.id) ? 'bg-brand-500 border-brand-500' : 'border-gray-300'
-                    }`}>
-                      {selected.has(s.id) && (
-                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/>
-                        </svg>
+            {/* Store list grouped by DM */}
+            {Object.entries(groupedStores).sort(([a], [b]) => a.localeCompare(b)).map(([dm, dmStores]) => (
+              <div key={dm} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="px-4 py-2.5 border-b flex items-center gap-2"
+                  style={{ backgroundColor: dmColor(dm) + '18', borderColor: dmColor(dm) + '40' }}>
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: dmColor(dm) }} />
+                  <h2 className="font-bold text-sm" style={{ color: dmColor(dm) }}>
+                    DM: {dm} <span className="font-normal text-xs opacity-70">({dmStores.filter(s => s.lat && s.lng).length}/{dmStores.length} mapped)</span>
+                  </h2>
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {dmStores.filter(s => s.lat && s.lng).map(s => (
+                    <button key={s.id} onClick={() => toggleStore(s.id)}
+                      className={`w-full px-4 py-3 flex items-center gap-3 text-left transition-colors ${
+                        selected.has(s.id) ? 'bg-gray-100' : 'hover:bg-gray-50'
+                      }`}>
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors`}
+                        style={selected.has(s.id)
+                          ? { backgroundColor: dmColor(s.dm_name), borderColor: dmColor(s.dm_name) }
+                          : { borderColor: '#d1d5db' }}>
+                        {selected.has(s.id) && (
+                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/>
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-gray-900">
+                          Store #{s.store_number}{s.name ? ` — ${s.name}` : ''}
+                        </div>
+                        {s.address && <div className="text-xs text-gray-400 truncate">{s.address}</div>}
+                      </div>
+                      {routeIds.has(s.id) && (
+                        <span className="text-xs text-white font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: dmColor(s.dm_name) }}>
+                          #{route.findIndex(r => r.id === s.id) + 1}
+                        </span>
                       )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-gray-900">
-                        Store #{s.store_number}{s.name ? ` — ${s.name}` : ''}
+                    </button>
+                  ))}
+                  {dmStores.filter(s => !s.lat || !s.lng).map(s => (
+                    <div key={s.id} className="px-4 py-3 flex items-center gap-3 opacity-40">
+                      <div className="w-5 h-5 rounded border-2 border-gray-200 flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold text-gray-500">
+                          Store #{s.store_number}{s.name ? ` — ${s.name}` : ''}
+                        </div>
+                        <div className="text-xs text-gray-400">No coordinates — geocode in Admin</div>
                       </div>
-                      {s.address && <div className="text-xs text-gray-400 truncate">{s.address}</div>}
                     </div>
-                    {routeIds.has(s.id) && (
-                      <span className="text-xs bg-brand-500 text-white font-bold px-2 py-0.5 rounded-full flex-shrink-0">
-                        #{route.findIndex(r => r.id === s.id) + 1}
-                      </span>
-                    )}
-                  </button>
-                ))}
-                {unmapped.map(s => (
-                  <div key={s.id} className="px-4 py-3 flex items-center gap-3 opacity-50">
-                    <div className="w-5 h-5 rounded border-2 border-gray-200 flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-sm font-semibold text-gray-500">
-                        Store #{s.store_number}{s.name ? ` — ${s.name}` : ''}
-                      </div>
-                      <div className="text-xs text-gray-400">No address — add in Admin</div>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            ))}
 
           </div>
         </div>
