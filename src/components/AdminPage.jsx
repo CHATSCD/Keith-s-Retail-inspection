@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchAllInspections, deleteInspection } from '../supabase';
+import { fetchAllInspections, deleteInspection, fetchStores, upsertStore, deleteStore, geocodeAddress } from '../supabase';
 import InspectionViewer from './InspectionViewer';
 
 const ADMIN_PASSWORD = 'keithsdm';
@@ -11,10 +11,159 @@ function gradeColor(g) {
   return 'text-red-600 bg-red-50 border-red-200';
 }
 
+function StoresTab() {
+  const [stores, setStores] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({ store_number: '', name: '', address: '' });
+  const [editing, setEditing] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+  const [geoError, setGeoError] = useState('');
+  const [deleting, setDeleting] = useState(null);
+
+  useEffect(() => {
+    fetchStores().then(setStores).finally(() => setLoading(false));
+  }, []);
+
+  function startEdit(s) {
+    setEditing(s.id);
+    setForm({ store_number: s.store_number, name: s.name || '', address: s.address || '' });
+    setGeoError('');
+  }
+
+  function cancelEdit() { setEditing(null); setForm({ store_number: '', name: '', address: '' }); setGeoError(''); }
+
+  async function handleGeocode() {
+    if (!form.address.trim()) return;
+    setGeocoding(true); setGeoError('');
+    try {
+      const { lat, lng } = await geocodeAddress(form.address);
+      const row = { id: editing || undefined, ...form, lat, lng };
+      setSaving(true);
+      await upsertStore(row);
+      const updated = await fetchStores();
+      setStores(updated);
+      cancelEdit();
+    } catch (e) {
+      setGeoError(e.message || 'Could not find address');
+    } finally {
+      setGeocoding(false); setSaving(false);
+    }
+  }
+
+  async function handleSaveNoGeo() {
+    setSaving(true);
+    try {
+      await upsertStore({ id: editing || undefined, ...form, lat: null, lng: null });
+      const updated = await fetchStores();
+      setStores(updated);
+      cancelEdit();
+    } finally { setSaving(false); }
+  }
+
+  async function handleDelete(id) {
+    if (!window.confirm('Remove this store?')) return;
+    setDeleting(id);
+    await deleteStore(id);
+    setStores(prev => prev.filter(s => s.id !== id));
+    setDeleting(null);
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Add / Edit form */}
+      <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+          {editing ? 'Edit Store' : 'Add Store'}
+        </div>
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Store #</label>
+              <input value={form.store_number} onChange={e => setForm(f => ({ ...f, store_number: e.target.value }))}
+                placeholder="1234"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Name (optional)</label>
+              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="Downtown"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Address</label>
+            <input value={form.address} onChange={e => { setForm(f => ({ ...f, address: e.target.value })); setGeoError(''); }}
+              placeholder="123 Main St, City, LA 70000"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          </div>
+          {geoError && <p className="text-xs text-red-500">{geoError} — try a more specific address</p>}
+          <div className="flex gap-2 pt-1">
+            <button onClick={handleGeocode}
+              disabled={!form.store_number.trim() || !form.address.trim() || geocoding || saving}
+              className="flex-1 bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold py-2 rounded-lg disabled:opacity-40 transition-colors">
+              {geocoding ? 'Finding location…' : saving ? 'Saving…' : 'Save & Place on Map'}
+            </button>
+            <button onClick={handleSaveNoGeo}
+              disabled={!form.store_number.trim() || saving}
+              className="px-3 py-2 text-xs text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40">
+              Save without map
+            </button>
+            {editing && (
+              <button onClick={cancelEdit} className="px-3 py-2 text-xs text-gray-400 border border-gray-200 rounded-lg hover:bg-gray-50">
+                Cancel
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Store list */}
+      {loading ? (
+        <div className="flex justify-center py-6">
+          <svg className="w-6 h-6 animate-spin text-brand-500" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+          </svg>
+        </div>
+      ) : stores.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm p-6 text-center text-gray-400 text-sm">No stores yet — add one above</div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="divide-y divide-gray-50">
+            {stores.map(s => (
+              <div key={s.id} className="px-4 py-3 flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-gray-900">Store #{s.store_number}{s.name ? ` — ${s.name}` : ''}</div>
+                  <div className="text-xs text-gray-400 truncate">
+                    {s.address || <span className="italic">No address</span>}
+                    {s.lat && s.lng ? <span className="text-green-600 ml-1">📍 on map</span> : ''}
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <button onClick={() => startEdit(s)}
+                    className="text-xs bg-gray-50 text-gray-600 border border-gray-200 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-gray-100">
+                    Edit
+                  </button>
+                  <button onClick={() => handleDelete(s.id)} disabled={deleting === s.id}
+                    className="text-xs bg-red-50 text-red-600 border border-red-200 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-red-100 disabled:opacity-50">
+                    {deleting === s.id ? '…' : 'Del'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage({ onHome }) {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState('');
   const [pwError, setPwError] = useState(false);
+  const [tab, setTab] = useState('inspections');
 
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -127,9 +276,24 @@ export default function AdminPage({ onHome }) {
           <img src="/logo.png" alt="Keith's Superstores" className="h-8 object-contain" />
           <span className="text-sm font-bold bg-white text-brand-700 px-3 py-1 rounded-lg">Admin</span>
         </div>
+        {/* Tabs */}
+        <div className="max-w-4xl mx-auto flex gap-1 mt-3">
+          {[['inspections', 'Inspections'], ['stores', 'Stores']].map(([id, label]) => (
+            <button key={id} onClick={() => setTab(id)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                tab === id ? 'bg-white text-brand-700' : 'text-brand-100 hover:text-white'
+              }`}>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 pt-4 space-y-4">
+
+        {tab === 'stores' && <StoresTab />}
+
+        {tab === 'inspections' && <>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
@@ -274,6 +438,9 @@ export default function AdminPage({ onHome }) {
             ))}
           </div>
         </div>
+
+        </>}
+
       </div>
     </div>
   );

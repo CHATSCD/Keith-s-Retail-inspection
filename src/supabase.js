@@ -89,3 +89,38 @@ export async function fetchInspection(id) {
 
   return { inspection, items };
 }
+
+// ── Stores ──────────────────────────────────────────────────────────────────
+
+export async function fetchStores() {
+  const { data, error } = await supabase
+    .from('stores')
+    .select('*')
+    .order('store_number');
+  if (error) throw error;
+  return data;
+}
+
+export async function upsertStore({ id, store_number, name, address, lat, lng }) {
+  const row = { store_number, name: name || null, address: address || null, lat: lat || null, lng: lng || null };
+  if (id) {
+    const { error } = await supabase.from('stores').update(row).eq('id', id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from('stores').insert(row);
+    if (error) throw error;
+  }
+}
+
+export async function deleteStore(id) {
+  const { error } = await supabase.from('stores').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function geocodeAddress(address) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
+  const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+  const data = await res.json();
+  if (!data.length) throw new Error('Address not found');
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+}
