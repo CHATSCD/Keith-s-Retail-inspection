@@ -5,6 +5,7 @@ import Summary from './components/Summary';
 import Header from './components/Header';
 import InspectionViewer from './components/InspectionViewer';
 import AdminPage from './components/AdminPage';
+import MapPage from './components/MapPage';
 import './index.css';
 
 const STORAGE_KEY = 'keithsRetailInspection';
@@ -174,10 +175,8 @@ export default function App() {
 
   const score = calcScore(answers);
 
-  // ── Admin ──
-  if (view === 'admin') {
-    return <AdminPage onHome={goHome} />;
-  }
+  if (view === 'admin') return <AdminPage onHome={goHome} />;
+  if (view === 'map')   return <MapPage onHome={goHome} />;
 
   // ── Shared-link viewer ──
   if (view === 'viewer') {
@@ -216,16 +215,28 @@ export default function App() {
             95–100% = 100%&nbsp;&nbsp;|&nbsp;&nbsp;90–94% = 90%&nbsp;&nbsp;|&nbsp;&nbsp;85–89% = 80%&nbsp;&nbsp;|&nbsp;&nbsp;&lt;85% = 0%
           </p>
 
-          <button
-            onClick={() => setView('admin')}
-            className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 font-medium hover:bg-gray-50 transition-colors"
-          >
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            Admin Panel
-          </button>
+          <div className="flex gap-2 mt-5">
+            <button
+              onClick={() => setView('map')}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+            >
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+              </svg>
+              Route Map
+            </button>
+            <button
+              onClick={() => setView('admin')}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+            >
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              Admin Panel
+            </button>
+          </div>
 
           <p className="text-xs text-gray-300 mt-5 leading-relaxed">
             Licensed to Keith's Superstores
